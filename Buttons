@@ -1,0 +1,101 @@
+#define TIME uint32_t
+
+const int leverPin = 12;
+const int potPin = A0;
+const int btnPin = 2;
+
+bool powerFlow = false;       // controlled by lever
+bool systemEnabled = false;   // toggled by short press
+
+bool btnWasPressed = false;
+TIME now = 0;
+
+enum btnPatterns {
+    released,
+    click,
+    longClick,
+};
+btnPatterns btnPattern = released;
+
+TIME lastBtnCheck = 0;
+const TIME btnCheckInterval = 10;
+
+TIME btnPressStart = 0;
+const TIME longClickDuration = 1000; // 1 second
+
+void setup() {
+    pinMode(leverPin, INPUT_PULLUP);
+    pinMode(btnPin, INPUT_PULLUP);
+    pinMode(potPin, INPUT);
+    
+    // Setup for buzzer/accelerometer if needed
+}
+
+// ---------------- Lever Check
+void checkLever() {
+    powerFlow = digitalRead(leverPin) == HIGH;
+}
+
+// ---------------- Potentiometer Controls Buzzer
+void adjustBuzzerIntensity() {
+    int potValue = analogRead(potPin);
+    int intensity = map(potValue, 0, 1023, 0, 255);
+
+    // Place your buzzer control code here
+    // Example: analogWrite(buzzerPin, intensity);
+}
+
+// ---------------- Read Button Press and Pattern
+void readButton() {
+    if (now - lastBtnCheck < btnCheckInterval) return;
+    lastBtnCheck = now;
+
+    bool currentBtn = !digitalRead(btnPin);  // Active LOW
+
+    if (currentBtn && !btnWasPressed) {
+        // Button just pressed
+        btnPressStart = now;
+    } else if (!currentBtn && btnWasPressed) {
+        // Button just released
+        TIME pressDuration = now - btnPressStart;
+        if (pressDuration >= longClickDuration) {
+            btnPattern = longClick;
+        } else {
+            btnPattern = click;
+        }
+        processButtonPattern();
+    }
+
+    btnWasPressed = currentBtn;
+}
+
+// ---------------- Handle Button Patterns
+void processButtonPattern() {
+    switch (btnPattern) {
+        case click:
+            systemEnabled = !systemEnabled;  // Toggle system on/off
+            break;
+        case longClick:
+            recordAccelerometerDistance();  // Custom function
+            break;
+        default:
+            break;
+    }
+    btnPattern = released;
+}
+
+// ---------------- Your Custom Accelerometer Function
+void recordAccelerometerDistance() {
+    // Insert code to read and store distance from accelerometer
+}
+
+// ---------------- Main Loop
+void loop() {
+    now = millis();
+    checkLever();
+
+    if (powerFlow && systemEnabled) {
+        adjustBuzzerIntensity();
+        readButton();
+    }
+}
