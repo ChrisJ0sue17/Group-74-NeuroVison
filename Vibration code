@@ -1,0 +1,26 @@
+const int button_pin = 2; 
+const int motor_pin = 8; 
+
+int button_state; 
+
+
+void setup() {
+  pinMode(button_pin,INPUT);
+  pinMode(motor_pin,OUTPUT);
+  Serial.begin(9600);
+
+
+}
+
+void loop() {
+  button_state = digitalRead(button_pin);
+  if(button_state == HIGH){
+    digitalWrite(motor_pin,HIGH);
+    Serial.println("ON");
+  }
+  else{
+    digitalWrite(motor_pin,LOW);
+    Serial.println("OFF");
+  }
+
+}
