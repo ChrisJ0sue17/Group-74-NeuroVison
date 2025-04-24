@@ -1,101 +1,62 @@
 #define TIME uint32_t
 
-const int leverPin = 12;
-const int potPin = A0;
-const int btnPin = 2;
+const int systemBtnPin = 2;     // Button to toggle system ON/OFF
+const int accelBtnPin = 3;      // Button to trigger accelerometer
 
-bool powerFlow = false;       // controlled by lever
-bool systemEnabled = false;   // toggled by short press
+bool systemEnabled = false;
 
-bool btnWasPressed = false;
+bool systemBtnWasPressed = false;
+bool accelBtnWasPressed = false;
+
 TIME now = 0;
-
-enum btnPatterns {
-    released,
-    click,
-    longClick,
-};
-btnPatterns btnPattern = released;
-
 TIME lastBtnCheck = 0;
 const TIME btnCheckInterval = 10;
 
-TIME btnPressStart = 0;
-const TIME longClickDuration = 1000; // 1 second
-
 void setup() {
-    pinMode(leverPin, INPUT_PULLUP);
-    pinMode(btnPin, INPUT_PULLUP);
-    pinMode(potPin, INPUT);
+    pinMode(systemBtnPin, INPUT_PULLUP);
+    pinMode(accelBtnPin, INPUT_PULLUP);
     
-    // Setup for buzzer/accelerometer if needed
+    // Serial.begin(9600); // Optional
 }
 
-// ---------------- Lever Check
-void checkLever() {
-    powerFlow = digitalRead(leverPin) == HIGH;
-}
+void readSystemButton() {
+    bool currentBtn = !digitalRead(systemBtnPin);  // Active LOW
 
-// ---------------- Potentiometer Controls Buzzer
-void adjustBuzzerIntensity() {
-    int potValue = analogRead(potPin);
-    int intensity = map(potValue, 0, 1023, 0, 255);
+    if (currentBtn && !systemBtnWasPressed) {
+        systemEnabled = !systemEnabled;
 
-    // Place your buzzer control code here
-    // Example: analogWrite(buzzerPin, intensity);
-}
-
-// ---------------- Read Button Press and Pattern
-void readButton() {
-    if (now - lastBtnCheck < btnCheckInterval) return;
-    lastBtnCheck = now;
-
-    bool currentBtn = !digitalRead(btnPin);  // Active LOW
-
-    if (currentBtn && !btnWasPressed) {
-        // Button just pressed
-        btnPressStart = now;
-    } else if (!currentBtn && btnWasPressed) {
-        // Button just released
-        TIME pressDuration = now - btnPressStart;
-        if (pressDuration >= longClickDuration) {
-            btnPattern = longClick;
-        } else {
-            btnPattern = click;
+        if (systemEnabled) {
+            startSystem();  // Call function that handles everything else
         }
-        processButtonPattern();
     }
 
-    btnWasPressed = currentBtn;
+    systemBtnWasPressed = currentBtn;
 }
 
-// ---------------- Handle Button Patterns
-void processButtonPattern() {
-    switch (btnPattern) {
-        case click:
-            systemEnabled = !systemEnabled;  // Toggle system on/off
-            break;
-        case longClick:
-            recordAccelerometerDistance();  // Custom function
-            break;
-        default:
-            break;
+void readAccelButton() {
+    bool currentBtn = !digitalRead(accelBtnPin);  // Active LOW
+
+    if (currentBtn && !accelBtnWasPressed && systemEnabled) {
+        triggerAccelerometer();
     }
-    btnPattern = released;
+
+    accelBtnWasPressed = currentBtn;
 }
 
-// ---------------- Your Custom Accelerometer Function
-void recordAccelerometerDistance() {
-    // Insert code to read and store distance from accelerometer
+void startSystem() {
+    // code for system start = buzzers, ultra sonic
 }
 
-// ---------------- Main Loop
+void triggerAccelerometer() {
+    // code for acceleromter 
+}
+
 void loop() {
     now = millis();
-    checkLever();
 
-    if (powerFlow && systemEnabled) {
-        adjustBuzzerIntensity();
-        readButton();
+    if (now - lastBtnCheck >= btnCheckInterval) {
+        lastBtnCheck = now;
+        readSystemButton();
+        readAccelButton();
     }
 }
