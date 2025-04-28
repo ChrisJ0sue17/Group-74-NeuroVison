@@ -1,0 +1,20 @@
+// Warn if battery voltage drops below a certain threshold
+// Voltage is measured at A0
+// Built-in LED switches on if voltage is too low
+
+const int threshold = 300;
+
+void setup() {
+  Serial.begin(9600);
+  pinMode(LED_BUILTIN, OUTPUT);
+}
+
+void loop() {
+  int value = analogRead(A0);
+  Serial.println(value);
+
+  int warn = value < threshold ? HIGH : LOW;
+  digitalWrite(LED_BUILTIN, warn);
+
+  delay(1000);
+}
